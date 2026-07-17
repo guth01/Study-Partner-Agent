@@ -145,7 +145,7 @@ def _get_llm(temperature: float = 0.3) -> ChatGoogleGenerativeAI:
 def _get_groq_llm(temperature: float = 0.3) -> ChatGroq:
     """Get a configured Groq LLM instance for fast classification tasks."""
     return ChatGroq(
-        model="llama-3.3-70b-versatile",
+        model="llama-3.3-70b-specdec",
         temperature=temperature,
     )
 

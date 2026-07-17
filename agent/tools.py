@@ -62,16 +62,32 @@ def search_notes(query: str, session_id: str, top_k: int = 3) -> dict:
         else:
             search_query = query
 
+        from langchain.retrievers import ContextualCompressionRetriever
+        from langchain_cohere import CohereRerank
+
         vs = get_session_collection(session_id)
 
-        # similarity_search_with_relevance_scores returns (Document, score) pairs
-        results = vs.similarity_search_with_relevance_scores(search_query, k=top_k)
+        # Stage 1: Retrieve a larger pool of documents (fast similarity search)
+        initial_k = max(20, top_k * 5)
+        base_retriever = vs.as_retriever(search_kwargs={"k": initial_k})
+        
+        # Stage 2: Rerank the retrieved documents using Cohere
+        compressor = CohereRerank(top_n=top_k)
+        compression_retriever = ContextualCompressionRetriever(
+            base_compressor=compressor,
+            base_retriever=base_retriever
+        )
 
-        if not results:
+        # invoke returns a list of Document objects sorted by rerank score
+        compressed_docs = compression_retriever.invoke(search_query)
+
+        if not compressed_docs:
             return {"chunks": [], "confidence": 0.0, "found": False}
 
         chunks = []
-        for doc, score in results:
+        for doc in compressed_docs:
+            # LangChain CohereRerank stores the rerank score in metadata
+            score = doc.metadata.get("relevance_score", 0.0)
             chunks.append({
                 "content": doc.page_content,
                 "metadata": doc.metadata,

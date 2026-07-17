@@ -35,7 +35,7 @@ Upload your documents → start a session → ask questions, generate flashcards
 ### 🔍 RAG + Sufficiency Judge Pipeline
 The core of the system is a multi-stage retrieval pipeline that goes beyond simple vector search:
 
-1. **RAG Node** — retrieves the top-k most relevant chunks using cosine similarity
+1. **RAG Node (with Vector Reranking)** — performs a two-stage retrieval. It first fetches a large candidate pool using cosine similarity, then passes them through a **Cohere Rerank** model (via `ContextualCompressionRetriever`) to score and extract only the most highly relevant chunks.
 2. **Sufficiency Judge** — a dedicated Gemini instance evaluates the retrieved context and returns one of three verdicts:
    - `SUFFICIENT` → answers immediately from your notes
    - `PARTIAL` → pauses and asks you whether to supplement with web search (Tavily) or Gemini's general knowledge
@@ -156,6 +156,7 @@ Embeddings use Google's `gemini-embedding-001` via API rather than a local `sent
 | Agent Orchestration | LangGraph (StateGraph with interrupts) |
 | LLM | Google Gemini 2.5 Flash |
 | Embeddings | Google Gemini Embedding API (`gemini-embedding-001`) |
+| Vector Reranking | Cohere Rerank API (`langchain-cohere`) |
 | Vector Store | ChromaDB (ephemeral, per-session) |
 | Database | MongoDB Atlas (Motor async driver) |
 | Document Storage | Cloudinary |
